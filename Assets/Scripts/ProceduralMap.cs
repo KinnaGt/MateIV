@@ -24,24 +24,28 @@ public class ProceduralMap : MonoBehaviour
 
     [SerializeField]
     int maxTries = 5;
+
+    List<Room> expansionRooms = new List<Room>(); // Lista de habitaciones desde donde expandir
     #endregion
 
     #region Startup
     void Start()
     {
-        generator = new LCG(seed); // Inicializa el generador con la semilla
+        generator = new LCG(seed);
         InitializeTilemap();
         GenerateRooms();
     }
 
     void InitializeTilemap()
     {
-        tilemap.ClearAllTiles(); // Limpia el Tilemap antes de empezar
+        tilemap.ClearAllTiles();
         Vector3Int center = GetTilemapCenter(tilemap);
-        Room startRoom = new Room(center, RoomType.Start, tileBase);
+        Room startRoom = new(center, RoomType.Start, tileBase);
         roomList.Add(startRoom);
-        tilemap.SetTile(center, tileBase); // Coloca la habitación inicial en el Tilemap
+        expansionRooms.Add(startRoom); // Agrega el start a expansión
+        tilemap.SetTile(center, tileBase);
     }
+
     #endregion
 
     #region Update Test methods
@@ -49,8 +53,10 @@ public class ProceduralMap : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            tilemap.ClearAllTiles(); // Limpia el Tilemap antes de empezar
-            roomList.Clear(); // Limpia la lista de habitaciones
+            tilemap.ClearAllTiles();
+            roomList.Clear();
+            expansionRooms.Clear();
+
             InitializeTilemap();
             GenerateRooms();
         }
@@ -61,40 +67,49 @@ public class ProceduralMap : MonoBehaviour
 
     void GenerateRooms()
     {
-        for (int i = 0; i < rooms; i++)
+        int createdRooms = 1; // Ya hay una (start room)
+        while (createdRooms < rooms && expansionRooms.Count > 0)
         {
-            Vector3Int newPosition = GetNextPosition();
-            Room newRoom = new Room(newPosition, RoomType.Normal, tileBase);
-            roomList.Add(newRoom);
-            tilemap.SetTile(newPosition, tileBase); // Coloca la habitación en el Tilemap
+            Room baseRoom = expansionRooms[generator.Next(expansionRooms.Count)];
+            Vector3Int basePosition = baseRoom.Position;
+
+            int direction = generator.GetDirection();
+            Vector3Int offset = GetDirectionOffset(direction);
+            Vector3Int newPosition = basePosition + offset;
+
+            if (!roomList.Exists(room => room.Position == newPosition))
+            {
+                Room newRoom = new(newPosition, RoomType.Normal, tileBase);
+                roomList.Add(newRoom);
+                expansionRooms.Add(newRoom);
+                tilemap.SetTile(newPosition, tileBase);
+                createdRooms++;
+            }
+            else
+            {
+                // Si no puede expandir, elimina esa baseRoom de la lista
+                expansionRooms.Remove(baseRoom);
+            }
         }
     }
 
-    Vector3Int GetNextPosition()
+    Vector3Int? GetNextPosition()
     {
-        int direction = generator.GetDirection();
-        Vector3Int currentPosition = roomList[roomList.Count - 1].Position;
+        Vector3Int currentPosition = GetRandomRoomPosition();
 
-        Vector3Int newPosition = currentPosition;
-
-        Vector3Int offset = GetDirectionOffset(direction);
-        int tries = 0;
-        while (roomList.Exists(room => room.Position == newPosition))
+        for (int i = 0; i < maxTries; i++)
         {
-            newPosition += offset;
-            Debug.Log($"Nueva posición: {newPosition}");
-            tries++;
+            int direction = generator.GetDirection();
+            Vector3Int offset = GetDirectionOffset(direction);
+            Vector3Int newPosition = currentPosition + offset;
 
-            if (tries >= maxTries)
+            if (!roomList.Exists(room => room.Position == newPosition))
             {
-                Debug.LogWarning(
-                    "No se pudo encontrar una nueva posición después de varios intentos."
-                );
-                break; // Sale del bucle si no se encuentra una nueva posición
+                return newPosition;
             }
         }
 
-        return newPosition;
+        return null; // No encontró posición libre
     }
 
     #endregion
@@ -119,6 +134,16 @@ public class ProceduralMap : MonoBehaviour
         int centerY = (bounds.yMin + bounds.yMax) / 2;
 
         return new Vector3Int(centerX, centerY, 0);
+    }
+
+    Vector3Int GetRandomRoomPosition()
+    {
+        int randomIndex = generator.Next(roomList.Count);
+        if (randomIndex < 0 || randomIndex >= roomList.Count)
+        {
+            randomIndex = 0; // fallback de seguridad
+        }
+        return roomList[randomIndex].Position;
     }
     #endregion
 }

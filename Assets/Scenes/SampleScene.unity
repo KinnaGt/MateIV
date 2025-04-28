@@ -253,11 +253,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 33baa7e3acdc89b43a076dec46e5e543, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  seed: 23455
+  seed: 123125
   rooms: 10
   tilemap: {fileID: 2061550285}
   tileBase: {fileID: 11400000, guid: 3c124be472cb78c42ad9dbec1bf40e1a, type: 2}
-  maxTries: 5
+  maxTries: 1
 --- !u!156049354 &873080917
 Grid:
   m_ObjectHideFlags: 0
