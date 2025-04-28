@@ -4,6 +4,7 @@ using UnityEngine.Tilemaps;
 
 public class ProceduralMap : MonoBehaviour
 {
+    #region Variables
     [SerializeField]
     int seed = 12345; // Semilla del generador
 
@@ -23,23 +24,14 @@ public class ProceduralMap : MonoBehaviour
 
     [SerializeField]
     int maxTries = 5;
+    #endregion
 
+    #region Startup
     void Start()
     {
         generator = new LCG(seed); // Inicializa el generador con la semilla
         InitializeTilemap();
         GenerateRooms();
-    }
-
-    void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            tilemap.ClearAllTiles(); // Limpia el Tilemap antes de empezar
-            roomList.Clear(); // Limpia la lista de habitaciones
-            InitializeTilemap();
-            GenerateRooms();
-        }
     }
 
     void InitializeTilemap()
@@ -50,15 +42,22 @@ public class ProceduralMap : MonoBehaviour
         roomList.Add(startRoom);
         tilemap.SetTile(center, tileBase); // Coloca la habitación inicial en el Tilemap
     }
+    #endregion
 
-    Vector3Int GetTilemapCenter(Tilemap tilemap)
+    #region Update Test methods
+    void Update()
     {
-        BoundsInt bounds = tilemap.cellBounds;
-        int centerX = (bounds.xMin + bounds.xMax) / 2;
-        int centerY = (bounds.yMin + bounds.yMax) / 2;
-
-        return new Vector3Int(centerX, centerY, 0);
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            tilemap.ClearAllTiles(); // Limpia el Tilemap antes de empezar
+            roomList.Clear(); // Limpia la lista de habitaciones
+            InitializeTilemap();
+            GenerateRooms();
+        }
     }
+    #endregion
+
+    #region Room Generation
 
     void GenerateRooms()
     {
@@ -82,7 +81,7 @@ public class ProceduralMap : MonoBehaviour
         int tries = 0;
         while (roomList.Exists(room => room.Position == newPosition))
         {
-            newPosition = newPosition + offset;
+            newPosition += offset;
             Debug.Log($"Nueva posición: {newPosition}");
             tries++;
 
@@ -98,20 +97,28 @@ public class ProceduralMap : MonoBehaviour
         return newPosition;
     }
 
+    #endregion
+
+    #region Helper Methods
     Vector3Int GetDirectionOffset(int direction)
     {
-        switch (direction)
+        return direction switch
         {
-            case 0:
-                return new Vector3Int(0, 1, 0);
-            case 1:
-                return new Vector3Int(0, -1, 0);
-            case 2:
-                return new Vector3Int(-1, 0, 0);
-            case 3:
-                return new Vector3Int(1, 0, 0);
-            default:
-                return Vector3Int.zero; // Por defecto no se mueve
-        }
+            0 => new Vector3Int(0, 1, 0),
+            1 => new Vector3Int(0, -1, 0),
+            2 => new Vector3Int(-1, 0, 0),
+            3 => new Vector3Int(1, 0, 0),
+            _ => Vector3Int.zero, // Por defecto no se mueve
+        };
     }
+
+    Vector3Int GetTilemapCenter(Tilemap tilemap)
+    {
+        BoundsInt bounds = tilemap.cellBounds;
+        int centerX = (bounds.xMin + bounds.xMax) / 2;
+        int centerY = (bounds.yMin + bounds.yMax) / 2;
+
+        return new Vector3Int(centerX, centerY, 0);
+    }
+    #endregion
 }
