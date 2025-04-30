@@ -37,6 +37,7 @@ public class ProceduralMap : MonoBehaviour
         generator = new LCG(seed);
         InitializeTilemap();
         GenerateRooms();
+        CenterCamera();
     }
 
     void InitializeTilemap()
@@ -54,6 +55,7 @@ public class ProceduralMap : MonoBehaviour
     #region Update Test methods
     void Update()
     {
+        // Test methods to regenerate the map and connect rooms
         if (Input.GetKeyDown(KeyCode.Space))
         {
             tilemap.ClearAllTiles();
@@ -62,14 +64,12 @@ public class ProceduralMap : MonoBehaviour
 
             InitializeTilemap();
             GenerateRooms();
+            CenterCamera();
         }
+
         if (Input.GetKeyDown(KeyCode.N))
         {
             ConnectRooms();
-        }
-        if (Input.GetKeyDown(KeyCode.C))
-        {
-            //TODO
         }
     }
 
@@ -126,7 +126,6 @@ public class ProceduralMap : MonoBehaviour
 
     #endregion
 
-
     #region Neighbor Connection
     void ConnectRooms()
     {
@@ -158,8 +157,30 @@ public class ProceduralMap : MonoBehaviour
     #endregion
 
     #region Camera Options
+    public void CenterCamera()
+    {
+        Camera camera = Camera.main;
+        tilemap.CompressBounds();
+        BoundsInt bounds = tilemap.cellBounds;
 
+        // Convertimos a Vector3Int tomando el centro aproximado
+        Vector3Int centerCell = new Vector3Int(
+            (bounds.xMin + bounds.xMax) / 2,
+            (bounds.yMin + bounds.yMax) / 2,
+            0
+        );
+
+        // Lo pasamos a mundo y centramos bien en el tile
+        Vector3 centerWorld = tilemap.CellToWorld(centerCell) + new Vector3(0.5f, 0.5f, 0f);
+
+        camera.transform.position = new Vector3(
+            centerWorld.x,
+            centerWorld.y,
+            camera.transform.position.z
+        );
+    }
     #endregion
+
     #region Helper Methods
     Vector3Int GetDirectionOffset(int direction)
     {

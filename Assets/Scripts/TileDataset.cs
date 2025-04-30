@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
+//Used to store the tile dataset and convert binary codes to tiles
 public class TileDataset : MonoBehaviour
 {
     [SerializeField]
