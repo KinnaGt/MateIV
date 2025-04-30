@@ -26,6 +26,9 @@ public class ProceduralMap : MonoBehaviour
     int maxTries = 5;
 
     List<Room> expansionRooms = new List<Room>(); // Lista de habitaciones desde donde expandir
+
+    [SerializeField]
+    TileDataset tileDataset; // Dataset de tiles
     #endregion
 
     #region Startup
@@ -60,7 +63,16 @@ public class ProceduralMap : MonoBehaviour
             InitializeTilemap();
             GenerateRooms();
         }
+        if (Input.GetKeyDown(KeyCode.N))
+        {
+            ConnectRooms();
+        }
+        if (Input.GetKeyDown(KeyCode.C))
+        {
+            //TODO
+        }
     }
+
     #endregion
 
     #region Room Generation
@@ -114,6 +126,40 @@ public class ProceduralMap : MonoBehaviour
 
     #endregion
 
+
+    #region Neighbor Connection
+    void ConnectRooms()
+    {
+        foreach (Room room in roomList)
+        {
+            Vector3Int currentPosition = room.Position;
+            int neighbors = CheckNeighbors(currentPosition);
+            Tile tile = tileDataset.codeToTile(neighbors); // Obtiene el tile correspondiente al código binario
+            if (tile == null)
+                continue; // Si no hay tile, no se conecta nada
+            tilemap.SetTile(currentPosition, tile); // Coloca la habitación en el tilemap
+        }
+    }
+
+    int CheckNeighbors(Vector3Int currentPosition)
+    {
+        int code = 0;
+
+        if (roomList.Exists(room => room.Position == currentPosition + new Vector3Int(0, 1, 0)))
+            code |= 1;
+        if (roomList.Exists(room => room.Position == currentPosition + new Vector3Int(1, 0, 0)))
+            code |= 2;
+        if (roomList.Exists(room => room.Position == currentPosition + new Vector3Int(0, -1, 0)))
+            code |= 4;
+        if (roomList.Exists(room => room.Position == currentPosition + new Vector3Int(-1, 0, 0)))
+            code |= 8;
+        return code;
+    }
+    #endregion
+
+    #region Camera Options
+
+    #endregion
     #region Helper Methods
     Vector3Int GetDirectionOffset(int direction)
     {
