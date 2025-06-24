@@ -17,6 +17,9 @@ public class ProceduralMap : MonoBehaviour
     Tilemap tilemap;
 
     [SerializeField]
+    Tilemap eventTilemap;
+
+    [SerializeField]
     Tile tileBase;
 
     [SerializeField]
@@ -43,6 +46,7 @@ public class ProceduralMap : MonoBehaviour
     void InitializeTilemap()
     {
         tilemap.ClearAllTiles();
+        eventTilemap.ClearAllTiles();
         Vector3Int center = GetTilemapCenter(tilemap);
         Room startRoom = new(center, RoomType.Start, tileBase);
         roomList.Add(startRoom);
@@ -59,8 +63,12 @@ public class ProceduralMap : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Space))
         {
             tilemap.ClearAllTiles();
+            eventTilemap.ClearAllTiles();
             roomList.Clear();
             expansionRooms.Clear();
+
+            seed = Random.Range(0, 10000);
+            generator = new LCG(seed);
 
             InitializeTilemap();
             GenerateRooms();
@@ -70,6 +78,11 @@ public class ProceduralMap : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.N))
         {
             ConnectRooms();
+        }
+
+        if (Input.GetKeyDown(KeyCode.E))
+        {
+            GenerateEvents();
         }
     }
 
@@ -105,25 +118,6 @@ public class ProceduralMap : MonoBehaviour
         }
     }
 
-    Vector3Int? GetNextPosition()
-    {
-        Vector3Int currentPosition = GetRandomRoomPosition();
-
-        for (int i = 0; i < maxTries; i++)
-        {
-            int direction = generator.GetDirection();
-            Vector3Int offset = GetDirectionOffset(direction);
-            Vector3Int newPosition = currentPosition + offset;
-
-            if (!roomList.Exists(room => room.Position == newPosition))
-            {
-                return newPosition;
-            }
-        }
-
-        return null; // No encontró posición libre
-    }
-
     #endregion
 
     #region Neighbor Connection
@@ -153,6 +147,83 @@ public class ProceduralMap : MonoBehaviour
         if (roomList.Exists(room => room.Position == currentPosition + new Vector3Int(-1, 0, 0)))
             code |= 8;
         return code;
+    }
+    #endregion
+
+    #region Event Generation
+    void GenerateEvents()
+    {
+        if (roomList.Count < 2)
+            return;
+
+        Vector3Int center = GetTilemapCenter(tilemap);
+
+        // Paso 1: calcular distancias al centro
+        roomList.Sort(
+            (a, b) =>
+                Vector3Int
+                    .Distance(b.Position, center)
+                    .CompareTo(Vector3Int.Distance(a.Position, center))
+        );
+
+        Room bossRoom = null;
+        foreach (Room room in roomList)
+        {
+            if (room.Position == center)
+                continue;
+
+            int neighbors = CheckNeighbors(room.Position);
+            int count = CountBits(neighbors);
+
+            if (count == 1) // solo una conexión
+            {
+                bossRoom = room;
+                break;
+            }
+        }
+
+        if (bossRoom == null)
+        {
+            Debug.LogWarning("No se pudo colocar boss");
+            return;
+        }
+
+        // Paso 2: buscar una habitación lo más lejana posible al boss para el home
+        Room homeRoom = null;
+        float maxDist = 0f;
+        foreach (Room room in roomList)
+        {
+            if (room.Position == center || room == bossRoom)
+                continue;
+
+            float dist = Vector3Int.Distance(room.Position, bossRoom.Position);
+            if (dist > maxDist)
+            {
+                maxDist = dist;
+                homeRoom = room;
+            }
+        }
+
+        if (homeRoom == null)
+        {
+            Debug.LogWarning("No se pudo colocar home");
+            return;
+        }
+
+        // Paso 3: Colocar los tiles en el eventTilemap
+        eventTilemap.SetTile(bossRoom.Position, tileDataset.bossTile);
+        eventTilemap.SetTile(homeRoom.Position, tileDataset.homeTile);
+    }
+
+    int CountBits(int x)
+    {
+        int count = 0;
+        while (x != 0)
+        {
+            count += x & 1;
+            x >>= 1;
+        }
+        return count;
     }
     #endregion
 

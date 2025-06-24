@@ -9,6 +9,9 @@ public class TileDataset : MonoBehaviour
     [SerializeField]
     public List<TileBase> tileList;
 
+    public TileBase bossTile;
+    public TileBase homeTile;
+
     public Tile codeToTile(int binaryCode)
     {
         int code = getIntFromBinary(binaryCode);
