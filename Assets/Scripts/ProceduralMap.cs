@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
@@ -26,7 +27,10 @@ public class ProceduralMap : MonoBehaviour
     List<Room> roomList = new List<Room>();
 
     [SerializeField]
-    int maxTries = 5;
+    TextMeshProUGUI seedText;
+
+    // [SerializeField]
+    // int maxTries = 5;
 
     List<Room> expansionRooms = new List<Room>(); // Lista de habitaciones desde donde expandir
 
@@ -38,6 +42,7 @@ public class ProceduralMap : MonoBehaviour
     void Start()
     {
         generator = new LCG(seed);
+        seedText.text = "Seed: \n" + seed.ToString();
         InitializeTilemap();
         GenerateRooms();
         CenterCamera();
@@ -69,6 +74,7 @@ public class ProceduralMap : MonoBehaviour
 
             seed = Random.Range(0, 10000);
             generator = new LCG(seed);
+            seedText.text = "Seed: \n" + seed.ToString();
 
             InitializeTilemap();
             GenerateRooms();
